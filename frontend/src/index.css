@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+  }
+
+  * {
+    @apply border-dark-700;
+  }
+
+  body {
+    @apply bg-dark-950 text-dark-50;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-500;
+  }
+
+  /* Focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-dark-950;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-brand-500/30 text-white;
+  }
+}
+
+@layer components {
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-500 active:bg-brand-700;
+  }
+
+  .btn-secondary {
+    @apply btn bg-dark-800 text-dark-100 hover:bg-dark-700 border border-dark-600;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-dark-300 hover:bg-dark-800 hover:text-dark-100;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-500 active:bg-red-700;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-dark-100 placeholder-dark-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-dark-300 mb-1;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-dark-900 border border-dark-700 rounded-xl p-6;
+  }
+
+  .card-header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  .card-title {
+    @apply text-lg font-semibold text-dark-100;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-critical { @apply badge bg-red-900/50 text-red-300 border border-red-800; }
+  .badge-high { @apply badge bg-orange-900/50 text-orange-300 border border-orange-800; }
+  .badge-medium { @apply badge bg-yellow-900/50 text-yellow-300 border border-yellow-800; }
+  .badge-low { @apply badge bg-blue-900/50 text-blue-300 border border-blue-800; }
+  .badge-info { @apply badge bg-dark-700 text-dark-400 border border-dark-600; }
+  .badge-verified { @apply badge bg-green-900/50 text-green-300 border border-green-800; }
+  .badge-likely { @apply badge bg-blue-900/50 text-blue-300 border border-blue-800; }
+  .badge-heuristic { @apply badge bg-yellow-900/50 text-yellow-300 border border-yellow-800; }
+
+  /* Grade badges */
+  .grade-a { @apply badge bg-green-900/50 text-green-300 border border-green-800 text-xl px-4 py-1; }
+  .grade-b { @apply badge bg-brand-900/50 text-brand-300 border border-brand-800 text-xl px-4 py-1; }
+  .grade-c { @apply badge bg-yellow-900/50 text-yellow-300 border border-yellow-800 text-xl px-4 py-1; }
+  .grade-d { @apply badge bg-orange-900/50 text-orange-300 border border-orange-800 text-xl px-4 py-1; }
+  .grade-f { @apply badge bg-red-900/50 text-red-300 border border-red-800 text-xl px-4 py-1; }
+
+  /* Table */
+  .table-container {
+    @apply overflow-x-auto rounded-lg border border-dark-700;
+  }
+
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-left font-medium text-dark-400 bg-dark-900 border-b border-dark-700 uppercase tracking-wider;
+  }
+
+  .table td {
+    @apply px-4 py-3 border-b border-dark-800;
+  }
+
+  .table tbody tr {
+    @apply hover:bg-dark-800/50 transition-colors;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 bg-dark-800 rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  .progress-fill-green { @apply progress-fill bg-green-500; }
+  .progress-fill-brand { @apply progress-fill bg-brand-500; }
+  .progress-fill-yellow { @apply progress-fill bg-yellow-500; }
+  .progress-fill-orange { @apply progress-fill bg-orange-500; }
+  .progress-fill-red { @apply progress-fill bg-red-500; }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-in {
+    animation: fadeIn 0.3s ease-out, slideUp 0.3s ease-out;
+  }
+}

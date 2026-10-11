@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vibegrade-postgres
+    environment:
+      POSTGRES_DB: vibegrade
+      POSTGRES_USER: vibegrade
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vibegrade_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vibegrade -d vibegrade"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vibegrade-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://vibegrade:${POSTGRES_PASSWORD:-vibegrade_dev}@postgres:5432/vibegrade
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      APP_ENV: development
+      APP_DEBUG: "true"
+      LOG_LEVEL: DEBUG
+      RUBRIC_VERSION: v1
+      RUBRIC_PATH: /app/rubric/v1.yaml
+    volumes:
+      - ./backend:/app
+      - ./rubric:/app/rubric
+      - /app/__pycache__
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vibegrade-frontend
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: vibegrade-network

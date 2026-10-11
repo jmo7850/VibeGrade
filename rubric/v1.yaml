@@ -1,0 +1,733 @@
+# VibeGrade Rubric v1.0
+# Machine-readable grading configuration
+# Version: 1.0
+# Date: 2026-10-11
+
+version: "1.0"
+description: "Initial rubric - 10 dimensions, 42 subchecks, 100 points total"
+
+dimensions:
+  - code: functional_correctness
+    name: "Functional Correctness"
+    weight: 20
+    description: "Does the software actually work as intended?"
+    weight_overrides:
+      cli: 15
+      library: 10
+      mobile: 18
+    subchecks:
+      - id: fc.build_success
+        name: "Build Succeeds"
+        points: 5
+        applies_to: ["all"]
+        evidence_sources: ["verification.build"]
+        description: "Build command exits with code 0 and produces expected artifacts"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+          skip: 0.0
+
+      - id: fc.entry_executes
+        name: "Entry Point Executes"
+        points: 4
+        applies_to: ["all"]
+        evidence_sources: ["verification.run"]
+        description: "Main binary/server starts without immediate crash"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+          skip: 0.0
+
+      - id: fc.core_workflow
+        name: "Core Workflow Verified"
+        points: 6
+        applies_to: ["web_app", "api", "cli", "agent"]
+        evidence_sources: ["verification.workflow", "verification.e2e"]
+        description: "At least one critical user journey passes (test or scripted verification)"
+        notes: "Requires verification engine (Phase 2). Marked skipped in Phase 1."
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+          skip: 0.0
+
+      - id: fc.error_handling
+        name: "Error Handling Present"
+        points: 3
+        applies_to: ["all"]
+        evidence_sources: ["static.eslint", "static.semgrep", "static.tsc"]
+        description: "Try/catch, error boundaries, graceful degradation patterns detected"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: fc.edge_cases
+        name: "Edge Cases Covered"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["verification.test"]
+        description: "Tests for empty states, invalid input, boundaries detected"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+  - code: security_privacy
+    name: "Security and Privacy"
+    weight: 15
+    description: "Are users and data protected?"
+    weight_overrides:
+      cli: 10
+      library: 8
+      mobile: 12
+    critical_blocker_rules:
+      - finding_pattern: "secret_exposure"
+        severity: ["critical"]
+        confidence: ["verified", "likely"]
+      - finding_pattern: "injection"
+        severity: ["critical", "high"]
+        confidence: ["verified", "likely"]
+      - finding_pattern: "auth_bypass"
+        severity: ["critical", "high"]
+        confidence: ["verified"]
+    subchecks:
+      - id: sec.auth_present
+        name: "Authentication Implemented"
+        points: 3
+        applies_to: ["web_app", "api", "agent"]
+        evidence_sources: ["static.semgrep", "static.tsc", "static.eslint"]
+        description: "Auth middleware, session management, login flow detected"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: sec.authz_server_side
+        name: "Server-Side Authorization"
+        points: 3
+        applies_to: ["web_app", "api", "agent"]
+        evidence_sources: ["static.semgrep", "static.tsc"]
+        description: "Permission checks in route handlers; not just UI hiding"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: sec.no_secrets
+        name: "No Secrets Exposed"
+        points: 3
+        applies_to: ["all"]
+        evidence_sources: ["static.detect_secrets"]
+        description: "detect-secrets: 0 findings in tracked files; no .env in repo"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+      - id: sec.injection_safe
+        name: "Injection Risks Mitigated"
+        points: 3
+        applies_to: ["web_app", "api", "cli", "agent"]
+        evidence_sources: ["static.semgrep", "static.tsc", "static.eslint"]
+        description: "Parameterized queries; input validation; no eval/exec"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: sec.dep_vulns
+        name: "Dependency Vulnerabilities"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["static.trivy", "static.semgrep"]
+        description: "Trivy/Semgrep: 0 critical/high unpatched CVEs"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: sec.config_defaults
+        name: "Secure Configuration Defaults"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["static.semgrep", "static.eslint"]
+        description: "No debug mode in prod config; secure headers; TLS config"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+  - code: architecture_maintainability
+    name: "Architecture and Maintainability"
+    weight: 12
+    description: "Is the codebase structured for long-term evolution?"
+    weight_overrides:
+      cli: 10
+      library: 15
+      mobile: 10
+    subchecks:
+      - id: arch.module_boundaries
+        name: "Module Boundaries Respected"
+        points: 3
+        applies_to: ["web_app", "api", "agent", "library"]
+        not_applies_to: ["cli", "mobile"]
+        evidence_sources: ["static.semgrep", "static.tsc", "arch.imports"]
+        description: "No circular imports; clear public APIs; internal vs external separation"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: arch.coupling
+        name: "Low Coupling / High Cohesion"
+        points: 3
+        applies_to: ["all"]
+        evidence_sources: ["arch.dependency_graph", "static.semgrep"]
+        description: "Fan-in/fan-out metrics; dependency direction analysis"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: arch.deduplication
+        name: "No Significant Duplication"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["static.jscpd", "static.semgrep"]
+        description: "Copy-paste detection; < 5% duplicated lines"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: arch.consistency
+        name: "Consistent Patterns"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["static.eslint", "static.tsc", "static.ruff"]
+        description: "Naming conventions; error handling style; config patterns"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: arch.complexity
+        name: "Appropriate Complexity"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["static.semgrep", "static.tsc", "arch.complexity"]
+        description: "Cyclomatic complexity < 20 per function; file size < 500 lines"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+  - code: testing_verification
+    name: "Testing and Verification"
+    weight: 12
+    description: "Is behavior verified automatically?"
+    weight_overrides:
+      cli: 10
+      library: 15
+      mobile: 10
+    subchecks:
+      - id: test.suite_exists
+        name: "Test Suite Exists"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["verification.test", "static.profiler"]
+        description: "Test files detected; test command runs"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+      - id: test.tests_pass
+        name: "Tests Execute & Pass"
+        points: 4
+        applies_to: ["all"]
+        evidence_sources: ["verification.test"]
+        description: "Test runner exit code = 0; > 0 tests executed"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+      - id: test.coverage
+        name: "Meaningful Coverage"
+        points: 3
+        applies_to: ["all"]
+        evidence_sources: ["verification.test"]
+        description: "Coverage > 60% statements (if measurable); critical paths covered"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: test.assertion_quality
+        name: "Test Quality (Assertions)"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["static.semgrep", "verification.test"]
+        description: "No empty tests; specific assertions; no trivial assertions"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: test.integration
+        name: "Integration/E2E Tests"
+        points: 1
+        applies_to: ["web_app", "api"]
+        evidence_sources: ["verification.test", "verification.e2e"]
+        description: "At least one cross-component test"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+  - code: data_backend_integrity
+    name: "Data and Backend Integrity"
+    weight: 10
+    description: "Is data handled correctly and consistently?"
+    weight_overrides:
+      web_app: 12
+      api: 15
+      agent: 12
+      cli: 3
+      library: 3
+      mobile: 5
+    subchecks:
+      - id: data.schema_constraints
+        name: "Schema with Constraints"
+        points: 3
+        applies_to: ["api", "web_app", "agent"]
+        not_applies_to: ["cli", "library", "mobile"]
+        evidence_sources: ["static.semgrep", "arch.schema"]
+        description: "NOT NULL, UNIQUE, FK, CHECK constraints present"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: data.migrations
+        name: "Migrations Versioned"
+        points: 2
+        applies_to: ["api", "web_app", "agent"]
+        not_applies_to: ["cli", "library", "mobile"]
+        evidence_sources: ["static.profiler", "arch.migrations"]
+        description: "Migration files; reversible; no raw SQL in app code"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: data.api_contracts
+        name: "API Contracts Validated"
+        points: 2
+        applies_to: ["api", "web_app", "agent"]
+        evidence_sources: ["static.tsc", "static.semgrep", "arch.openapi"]
+        description: "OpenAPI/Schema validation; request/response typing"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: data.transactions
+        name: "Transaction Handling"
+        points: 2
+        applies_to: ["api", "web_app", "agent"]
+        not_applies_to: ["cli", "library", "mobile"]
+        evidence_sources: ["static.semgrep", "static.tsc"]
+        description: "Explicit transactions; rollback on error; no partial writes"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: data.cross_layer
+        name: "Cross-Layer Consistency"
+        points: 1
+        applies_to: ["web_app", "api"]
+        evidence_sources: ["arch.type_sharing", "static.tsc"]
+        description: "Frontend types match backend; shared schemas"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+  - code: completeness_integration
+    name: "Completeness and Integration"
+    weight: 10
+    description: "Are features actually finished and connected?"
+    weight_overrides:
+      web_app: 12
+      mobile: 12
+      api: 8
+      cli: 5
+      library: 5
+      agent: 8
+    subchecks:
+      - id: comp.no_dead_controls
+        name: "No Dead Controls"
+        points: 2
+        applies_to: ["web_app", "mobile"]
+        evidence_sources: ["static.semgrep", "static.tsc", "static.eslint"]
+        description: "No buttons/links with no handler; no unreachable routes"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: comp.no_placeholders
+        name: "No Placeholder Implementations"
+        points: 3
+        applies_to: ["all"]
+        evidence_sources: ["static.semgrep", "static.eslint", "static.tsc"]
+        description: "No TODO/FIXME/mock in production paths; no stub returns"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: comp.no_fake_apis
+        name: "No Fake APIs"
+        points: 2
+        applies_to: ["web_app", "api", "mobile"]
+        evidence_sources: ["static.semgrep", "static.tsc"]
+        description: "No hardcoded responses masquerading as live data"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: comp.states
+        name: "Proper Loading/Error/Empty States"
+        points: 2
+        applies_to: ["web_app", "mobile"]
+        evidence_sources: ["static.semgrep", "static.tsc", "static.eslint"]
+        description: "Skeleton loaders; error boundaries; empty state UI"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: comp.fe_be_connected
+        name: "Frontend-Backend Connected"
+        points: 1
+        applies_to: ["web_app"]
+        evidence_sources: ["arch.network_calls", "static.tsc"]
+        description: "API calls reach real endpoints; no mock adapters in prod build"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+  - code: performance_efficiency
+    name: "Performance and Efficiency"
+    weight: 6
+    description: "Are there measurable performance risks?"
+    weight_overrides:
+      web_app: 8
+      mobile: 8
+      api: 7
+      agent: 7
+      cli: 4
+      library: 3
+    subchecks:
+      - id: perf.n_plus_one
+        name: "No Obvious N+1 Queries"
+        points: 2
+        applies_to: ["api", "web_app", "agent"]
+        not_applies_to: ["cli", "library", "mobile"]
+        evidence_sources: ["static.semgrep", "arch.orm_analysis"]
+        description: "ORM query analysis; no loop queries"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: perf.bundle_size
+        name: "Reasonable Bundle Size"
+        points: 1
+        applies_to: ["web_app", "mobile"]
+        evidence_sources: ["verification.build"]
+        description: "JS bundle < 500KB gzipped (or documented justification)"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: perf.memory_static
+        name: "No Memory Leaks (Static)"
+        points: 1
+        applies_to: ["api", "agent", "web_app"]
+        evidence_sources: ["static.semgrep", "static.tsc"]
+        description: "No global accumulation; proper cleanup patterns"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: perf.algorithms
+        name: "Efficient Algorithms"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["static.semgrep", "arch.complexity"]
+        description: "No O(n²) in hot paths without justification"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: perf.cleanup
+        name: "Resource Cleanup"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["static.semgrep", "static.tsc", "static.eslint"]
+        description: "Connections closed; files closed; timers cleared"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+  - code: deployment_operations
+    name: "Deployment and Operations"
+    weight: 5
+    description: "Can this be deployed and operated reliably?"
+    weight_overrides:
+      web_app: 6
+      api: 7
+      agent: 6
+      mobile: 6
+      cli: 3
+      library: 2
+    subchecks:
+      - id: deploy.reproducible_build
+        name: "Reproducible Build"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["static.profiler", "verification.build"]
+        description: "Lockfiles committed; Dockerfile deterministic; no 'latest' tags"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: deploy.env_config
+        name: "Environment Config"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["static.profiler", "static.semgrep"]
+        description: ".env.example; no secrets in config; 12-factor compliance"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+      - id: deploy.ci_checks
+        name: "CI Checks Configured"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["static.profiler"]
+        description: "CI file present; runs lint/test/build on PR"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+      - id: deploy.observability
+        name: "Health/Observability"
+        points: 1
+        applies_to: ["api", "web_app", "agent"]
+        not_applies_to: ["cli", "library", "mobile"]
+        evidence_sources: ["static.semgrep", "static.tsc", "static.eslint"]
+        description: "Health endpoint; structured logging; error tracking"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+  - code: documentation_reproducibility
+    name: "Documentation and Reproducibility"
+    weight: 5
+    description: "Can someone else build, run, and understand this?"
+    weight_overrides:
+      library: 8
+      cli: 7
+      web_app: 5
+      api: 5
+      mobile: 5
+      agent: 5
+    subchecks:
+      - id: doc.setup_instructions
+        name: "Setup Instructions"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["static.profiler", "static.readme"]
+        description: "README with clone, install, run steps that work"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: doc.run_commands
+        name: "Run/Deploy Commands"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["static.profiler", "static.readme"]
+        description: "Clear dev, build, start, test commands"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+      - id: doc.architecture
+        name: "Architecture/API Docs"
+        points: 1
+        applies_to: ["web_app", "api", "agent"]
+        not_applies_to: ["cli", "library", "mobile"]
+        evidence_sources: ["static.profiler", "static.readme"]
+        description: "ARCHITECTURE.md or equivalent; API docs if API"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+      - id: doc.limitations
+        name: "Limitations Documented"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["static.readme"]
+        description: "Known issues, unsupported features, scope boundaries"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+  - code: engineering_discipline
+    name: "Engineering Discipline"
+    weight: 5
+    description: "Does the project follow baseline engineering practices?"
+    weight_overrides:
+      library: 7
+      cli: 6
+      agent: 5
+      web_app: 5
+      api: 5
+      mobile: 4
+    subchecks:
+      - id: eng.dep_hygiene
+        name: "Dependency Hygiene"
+        points: 2
+        applies_to: ["all"]
+        evidence_sources: ["static.trivy", "static.profiler", "static.semgrep"]
+        description: "Lockfiles; no unpinned deps; regular updates; no deprecated"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: eng.type_lint
+        name: "Type Checking / Linting"
+        points: 1
+        applies_to: ["web_app", "api", "agent", "library", "mobile"]
+        not_applies_to: ["cli"]
+        evidence_sources: ["static.profiler", "verification.build"]
+        description: "TypeScript strict; mypy; clippy; go vet configured"
+        severity_map:
+          pass: 1.0
+          fail: 0.0
+
+      - id: eng.error_handling
+        name: "Consistent Error Handling"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["static.semgrep", "static.tsc", "static.eslint"]
+        description: "Single error pattern; no swallowed exceptions; logging"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+      - id: eng.complexity
+        name: "Avoidable Complexity"
+        points: 1
+        applies_to: ["all"]
+        evidence_sources: ["arch.complexity", "static.semgrep"]
+        description: "No god classes; reasonable function length; DRY"
+        severity_map:
+          pass: 1.0
+          partial: 0.5
+          fail: 0.0
+
+# Applicability rules by project type
+project_type_rules:
+  web_app:
+    description: "Browser-based applications (Next.js, React, Vue, Svelte, etc.)"
+    excluded_subchecks: []
+  api:
+    description: "Backend APIs (FastAPI, Express, Django, Flask, Go, Rust, etc.)"
+    excluded_subchecks: []
+  cli:
+    description: "Command-line tools"
+    excluded_subchecks:
+      - arch.module_boundaries
+      - sec.auth_present
+      - sec.authz_server_side
+      - data.schema_constraints
+      - data.migrations
+      - data.transactions
+      - comp.no_dead_controls
+      - comp.no_fake_apis
+      - comp.states
+      - comp.fe_be_connected
+      - perf.bundle_size
+      - deploy.observability
+      - doc.architecture
+      - eng.type_lint
+  library:
+    description: "Reusable libraries/packages"
+    excluded_subchecks:
+      - sec.auth_present
+      - sec.authz_server_side
+      - data.schema_constraints
+      - data.migrations
+      - data.transactions
+      - comp.no_dead_controls
+      - comp.no_fake_apis
+      - comp.states
+      - comp.fe_be_connected
+      - perf.bundle_size
+      - deploy.observability
+      - doc.architecture
+  agent:
+    description: "AI agents (LangChain, CrewAI, Autogen, etc.)"
+    excluded_subchecks: []
+  mobile:
+    description: "Mobile applications (Expo, React Native, Flutter, Tauri, Capacitor)"
+    excluded_subchecks:
+      - data.schema_constraints
+      - data.migrations
+      - data.transactions
+      - deploy.observability
+      - eng.type_lint
+  unknown:
+    description: "Unrecognized project type - all checks apply with reduced confidence"
+    excluded_subchecks: []
+
+# Severity mapping from tool outputs to unified severity
+severity_mapping:
+  eslint:
+    error: high
+    warning: medium
+  typescript:
+    error: high
+    warning: medium
+  semgrep:
+    ERROR: critical
+    WARNING: high
+    INFO: medium
+  trivy:
+    CRITICAL: critical
+    HIGH: high
+    MEDIUM: medium
+    LOW: low
+  detect_secrets:
+    high: critical
+    medium: high
+    low: medium
+
+# Confidence assignment by check category
+confidence_by_category:
+  verification: verified
+  static: likely
+  heuristic: heuristic
+  info: info

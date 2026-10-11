@@ -1,0 +1,1 @@
+"""VibeGrade Backend Application."""
